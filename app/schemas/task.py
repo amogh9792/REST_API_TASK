@@ -11,9 +11,18 @@ class TaskCreate(BaseModel):
     is_done: Optional[bool] = False
     due_date: Optional[datetime] = None  # ← Add this line
 
-class TaskOut(TaskCreate):
+# schemas/task.py
+class TaskOut(BaseModel):
     id: int
-    owner_id: int
+    title: str
+    description: str
+    status: str
+    due_date: Optional[datetime]
+    created_at: Optional[datetime]
+
+    class Config:
+        orm_mode = True
+
 
     class Config:
         orm_mode = True

@@ -1,13 +1,16 @@
+# models/task.py
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy.sql import func
 from app.db.base import Base
-from datetime import datetime
+
 
 class Task(Base):
     __tablename__ = "tasks"
+
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
+    title = Column(String, nullable=False)
     description = Column(String)
-    status = Column(String, default="pending")
-    due_date = Column(DateTime, nullable=True)
+    status = Column(String, default="Pending")
+    due_date = Column(DateTime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     owner_id = Column(Integer, ForeignKey("users.id"))
-    created_at = Column(DateTime, default=datetime.utcnow)

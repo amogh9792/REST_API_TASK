@@ -29,3 +29,19 @@ alembic/versions/
 
 # MacOS
 .DS_Store
+
+# React
+node_modules/
+build/
+.env
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# prevent sensitive files from being tracked
+.env
+node_modules/
+dist/
+build/
