@@ -1,124 +1,206 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "../styles/Dashboard.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Dashboard = () => {
-  const token = sessionStorage.getItem('token');
   const [tasks, setTasks] = useState([]);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('Pending');
-  const [dueDate, setDueDate] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [status, setStatus] = useState("Pending");
+
+  const token = sessionStorage.getItem("token");
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/tasks/tasks', {
+      const res = await axios.get("http://127.0.0.1:8000/tasks/tasks", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTasks(res.data);
     } catch (err) {
-      console.error('Failed to fetch tasks', err);
+      console.error("Error fetching tasks:", err);
     }
   };
 
-  const addTask = async () => {
+  const handleAddTask = async (e) => {
+    e.preventDefault();
     try {
       await axios.post(
-        'http://localhost:8000/tasks/tasks',
-        {
-          title,
-          description,
-          status,
-          due_date: dueDate,
-        },
+        "http://127.0.0.1:8000/tasks/tasks",
+        { title, description, status, due_date: dueDate },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setTitle('');
-      setDescription('');
-      setStatus('Pending');
-      setDueDate('');
-      fetchTasks(); // Refresh list
+      setTitle("");
+      setDescription("");
+      setDueDate("");
+      setStatus("Pending");
+      fetchTasks();
     } catch (err) {
-      console.error('Failed to add task', err);
+      console.error("Error adding task:", err);
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? 'N/A' : date.toLocaleString();
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://127.0.0.1:8000/tasks/tasks/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchTasks();
+    } catch (err) {
+      console.error("Error deleting task:", err);
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const taskToUpdate = tasks.find((task) => task.id === id);
+      if (!taskToUpdate) return;
+
+      const updatedData = {
+        title: taskToUpdate.title,
+        description: taskToUpdate.description,
+        due_date: taskToUpdate.due_date,
+        status: newStatus,
+      };
+
+      console.log("Updating task:", updatedData);
+
+      await axios.put(`http://127.0.0.1:8000/tasks/tasks/${id}`, updatedData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchTasks();
+    } catch (err) {
+      console.error("Error updating status:", err);
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+    window.location.href = "/";
   };
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold mb-6 text-center text-indigo-700">Your Task Dashboard</h2>
+  const TaskCard = ({ task }) => (
+    <div className="card mb-3 shadow-sm">
+      <div className="card-body">
+        <h5 className="card-title">{task.title}</h5>
+        <p className="card-text">{task.description}</p>
+        <p className="card-text">
+          <small>
+            Due: {task.due_date ? task.due_date.split("T")[0] : "N/A"}
+          </small>
+          <br />
+          <small>
+            Created:{" "}
+            {task.created_at
+              ? new Date(task.created_at).toLocaleString()
+              : "N/A"}
+          </small>
+        </p>
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <select
+              className="form-select form-select-sm me-2"
+              value={task.status}
+              onChange={(e) => handleStatusChange(task.id, e.target.value)}
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={() => handleDelete(task.id)}
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
-      {/* Add Task Section */}
-      <div className="bg-white shadow-md p-6 mb-8 rounded-lg grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <input
-          className="border border-gray-300 p-2 rounded"
-          placeholder="Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <input
-          className="border border-gray-300 p-2 rounded"
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        <select
-          className="border border-gray-300 p-2 rounded"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
-        </select>
-        <input
-          className="border border-gray-300 p-2 rounded"
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-        <button
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow-md col-span-full md:col-span-1"
-          onClick={addTask}
-        >
-          Add Task
+  const filteredTasks = (status) =>
+    tasks.filter((task) => task.status === status);
+
+  return (
+    <div className="container py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Task Dashboard</h2>
+        <button className="btn btn-outline-dark" onClick={handleLogout}>
+          Logout
         </button>
       </div>
 
-      {/* Task List */}
-      <div className="space-y-6">
-        {tasks.map((task) => (
-          <div key={task.id} className="bg-white shadow-lg rounded-lg p-5 border-l-4 border-blue-500">
-            <h3 className="text-xl font-semibold mb-1 text-gray-800">{task.title || "Untitled Task"}</h3>
-            <p className="text-gray-600 mb-2">{task.description || "No description"}</p>
+      <form
+        onSubmit={handleAddTask}
+        className="mb-4 shadow p-4 rounded bg-light"
+      >
+        <h4>Add Task</h4>
+        <div className="row g-3">
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Task Title"
+              value={title}
+              required
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="col-md-2">
+            <input
+              type="date"
+              className="form-control"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </div>
+          <div className="col-md-2">
+            <select
+              className="form-select"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div className="col-12">
+            <button className="btn btn-primary w-100">Add Task</button>
+          </div>
+        </div>
+      </form>
 
-            <div className="flex flex-col sm:flex-row sm:justify-between text-sm text-gray-500">
-              <div>
-                <span className="font-medium text-gray-700">Status:</span>{' '}
-                <span className={`inline-block px-2 py-1 rounded-full text-white text-xs ${
-                  task.status === 'Completed' ? 'bg-green-600' :
-                  task.status === 'In Progress' ? 'bg-yellow-500' :
-                  'bg-red-500'
-                }`}>
-                  {task.status}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium">Due:</span> {formatDate(task.due_date)}
-              </div>
-              <div>
-                <span className="font-medium">Created:</span> {formatDate(task.created_at)}
-              </div>
-            </div>
+      <div className="row">
+        {["Pending", "In Progress", "Completed"].map((section) => (
+          <div key={section} className="col-md-4">
+            <h5 className="text-center">{section} Tasks</h5>
+            {filteredTasks(section).length > 0 ? (
+              filteredTasks(section).map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))
+            ) : (
+              <p className="text-muted text-center">
+                No {section.toLowerCase()} tasks
+              </p>
+            )}
           </div>
         ))}
       </div>

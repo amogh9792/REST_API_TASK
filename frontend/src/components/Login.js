@@ -1,11 +1,12 @@
+// Updated Login.js with Bootstrap styling and form layout
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -17,20 +18,46 @@ const Login = () => {
       });
       sessionStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Login failed. Check credentials.');
+    } catch (error) {
+      setMessage('Login failed. Please check your credentials.');
     }
   };
 
   return (
-    <div className="p-4 max-w-sm mx-auto">
-      <h1 className="text-xl font-bold mb-4">Login</h1>
-      {error && <p className="text-red-500 mb-2">{error}</p>}
-      <form onSubmit={handleLogin}>
-        <input className="border w-full p-2 mb-2" type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-        <input className="border w-full p-2 mb-2" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button className="bg-blue-500 text-white px-4 py-2" type="submit">Login</button>
-      </form>
+    <div className="container d-flex vh-100 align-items-center justify-content-center bg-light">
+      <div className="card shadow p-4 w-100" style={{ maxWidth: '400px' }}>
+        <h2 className="text-center mb-4">Login</h2>
+        {message && <div className="alert alert-danger text-center">{message}</div>}
+        <form onSubmit={handleLogin}>
+          <div className="mb-3">
+            <label className="form-label">Username</label>
+            <input
+              type="text"
+              className="form-control"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Password</label>
+            <input
+              type="password"
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary w-100 mb-3">
+            Login
+          </button>
+          <p className="text-center">
+            Don't have an account?{' '}
+            <Link to="/register">Register here</Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 };
